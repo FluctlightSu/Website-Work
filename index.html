@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>软件2203-33</title>
+		<link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
+	</head>
+	<style>
+
+	</style>
+	<body>
+    <!-- 添加头 -->
+		<div class="container">
+			<div class="header">
+				<span>存储列表</span>
+				<button onclick="openModal()" id="new">添加</i>
+				</button>
+			</div>
+      <!-- 展示框头 -->
+			<div class="divTable">
+				<table>
+					<thead>
+						<tr>
+							<th>名</th>
+							<th>姓</th>
+							<th>编号</th>
+							<th class="acao">编辑</th>
+							<th class="acao">删除</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+
+      <!-- 添加头-编辑块 -->
+			<div class="modal-container">
+				<div class="modal">
+					<form>
+						<label for="m-nome">名</label>
+						<input id="m-nome" type="text" required />
+
+						<label for="m-funcao">姓</label>
+						<input id="m-funcao" type="text" required />
+
+						<label for="m-salario">编号</label>
+						<input id="m-salario" type="number" required />
+						<button id="btnSalvar">保存</button>
+					</form>
+				</div>
+			</div>
+		</div>
+		<script>
+			// 选择DOM元素
+			const modal = document.querySelector('.modal-container'); // 选择modal容器元素
+			const tbody = document.querySelector('tbody'); // 选择表格主体元素
+			const sNome = document.querySelector('#m-nome'); // 选择id为'm-nome'的输入元素
+			const sFuncao = document.querySelector('#m-funcao'); // 选择id为'm-funcao'的输入元素
+			const sSalario = document.querySelector('#m-salario'); // 选择id为'm-salario'的输入元素
+			const btnSalvar = document.querySelector('#btnSalvar'); // 选择id为'btnSalvar'的按钮元素
+			
+			let itens; // 变量用于存储数据项
+			let id; // 变量用于存储正在编辑的项目的索引
+			
+			// 打开添加或编辑项目的模态框的函数
+			function openModal(edit = false, index = 0) {
+			  modal.classList.add('active'); // 添加'active'类以显示模态框
+			
+			  modal.onclick = e => {
+			    // 当点击模态框内容之外时关闭模态框
+			    if (e.target.className.indexOf('modal-container') !== -1) {
+			      modal.classList.remove('active');
+			    }
+			  }
+			
+			  if (edit) {
+			    // 如果是编辑，使用项目数据填充模态框字段
+			    sNome.value = itens[index].nome;
+			    sFuncao.value = itens[index].funcao;
+			    sSalario.value = itens[index].salario;
+			    id = index; // 设置全局变量id以供后续引用
+			  } else {
+			    // 如果不是编辑，清空模态框字段
+			    sNome.value = '';
+			    sFuncao.value = '';
+			    sSalario.value = '';
+			  }
+			}
+			
+			// 编辑项目的函数，通过打开模态框实现
+			function editItem(index) {
+			  openModal(true, index);
+			}
+			
+			// 删除项目并更新显示的函数
+			function deleteItem(index) {
+			  itens.splice(index, 1); // 从数组中移除项目
+			  setItensBD(); // 更新本地存储
+			  loadItens(); // 重新加载显示的项目
+			}
+			
+			// 将项目插入到表格的函数
+			function insertItem(item, index) {
+			  let tr = document.createElement('tr'); // 创建新的表格行
+			
+			  // 使用项目数据以及编辑/删除按钮填充行
+			  tr.innerHTML = `
+			    <td>${item.nome}</td>
+			    <td>${item.funcao}</td>
+			    <td>R$ ${item.salario}</td>
+			    <td class="acao">
+			      <button onclick="editItem(${index})"><i class='bx bx-edit' ></i></button>
+			    </td>
+			    <td class="acao">
+			      <button onclick="deleteItem(${index})"><i class='bx bx-trash'></i></button>
+			    </td>
+			  `;
+			
+			  tbody.appendChild(tr); // 将行附加到表格主体
+			}
+			
+			// 保存按钮的事件监听器
+			btnSalvar.onclick = e => {
+			  // 验证输入字段
+			  if (sNome.value == '' || sFuncao.value == '' || sSalario.value == '') {
+			    return; // 如果任何字段为空，则退出
+			  }
+			
+			  e.preventDefault(); // 阻止默认的表单提交行为
+			
+			  if (id !== undefined) {
+			    // 如果是编辑，更新现有项目
+			    itens[id].nome = sNome.value;
+			    itens[id].funcao = sFuncao.value;
+			    itens[id].salario = sSalario.value;
+			  } else {
+			    // 如果是添加新项目，将其推送到数组中
+			    itens.push({'nome': sNome.value, 'funcao': sFuncao.value, 'salario': sSalario.value});
+			  }
+			
+			  setItensBD(); // 更新本地存储
+			  modal.classList.remove('active'); // 隐藏模态框
+			  loadItens(); // 重新加载显示的项目
+			  id = undefined; // 重置全局变量id
+			}
+			
+			// 从本地存储加载项目并显示它们的函数
+			function loadItens() {
+			  itens = getItensBD(); // 从本地存储中获取项目
+			  tbody.innerHTML = ''; // 清空表格主体
+			  itens.forEach((item, index) => {
+			    insertItem(item, index); // 将每个项目插入表格
+			  });
+			}
+			
+			// 获取和设置本地存储中项目的函数
+			const getItensBD = () => JSON.parse(localStorage.getItem('dbfunc')) ?? [];
+			const setItensBD = () => localStorage.setItem('dbfunc', JSON.stringify(itens));
+			
+			loadItens(); // 当脚本运行时加载并显示项目
+		</script>
+	</body>
+</html>
